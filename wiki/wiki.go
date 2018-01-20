@@ -1,6 +1,7 @@
 package wiki
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -22,7 +23,7 @@ type wiki struct {
 
 // New creates a new wiki handler and ensures that our git store is set up
 // properly and ready to be queried against.
-func New() http.Handler {
+func New(ctx context.Context) http.Handler {
 	store := &git.Store{
 		Repo:   viper.GetString("repository"),
 		Branch: viper.GetString("branch"),
@@ -37,11 +38,9 @@ func New() http.Handler {
 	if len(store.Remote) > 0 {
 		// if remoteExists && branchExists...
 		log.Debug("Starting syncing process")
-		go store.Sync(viper.GetInt("syncInterval"))
+		go store.Sync(ctx, viper.GetInt("syncInterval"))
 	}
-
-	router := mux.NewRouter()
-	return &wiki{router: router, store: store}
+	return &wiki{router: mux.NewRouter(), store: store}
 }
 
 // ServeHTTP complies to the http Handler interface
@@ -93,4 +92,3 @@ func (wiki *wiki) WriteSettings(settings *exo.WikiSettings) error {
 	}
 	return nil
 }
-

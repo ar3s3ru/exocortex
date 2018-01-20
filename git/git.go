@@ -2,7 +2,9 @@ package git
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -157,20 +159,24 @@ func (gs *Store) Grep(pattern string) ([]exo.SearchResult, error) {
 	return results, nil
 }
 
-// WritePage writes and commits a page object to the wiki
+// WritePage writes and commits a page object to the wiki.
 func (gs *Store) WritePage(p *exo.Page) error {
 	path := util.EnsureMDPath(p.Prefix)
-	absPath := filepath.Join(gs.Repo, path)
-	if err := util.EnsureDirExists(absPath); err != nil {
+	abs := filepath.Join(gs.Repo, util.EnsureMDPath(p.Prefix))
+	if err := util.EnsureDirExists(abs); err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(absPath, []byte(p.Body), 0600); err != nil {
+	f, err := os.OpenFile(abs, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(f, strings.NewReader(p.Body)); err != nil {
 		return err
 	}
 	if _, err := gs.Add(path, ""); err != nil {
 		return err
 	}
-	return nil
+	return f.Close()
 }
 
 // Pull grabs the latest code from the remote branch this store is tracking
@@ -186,23 +192,23 @@ func (gs *Store) Push() (string, error) {
 
 // Sync pulls latest changes and pushes up any new commits to the remote branch
 // this store is tracking.
-func (gs *Store) Sync(secondInterval int) {
+func (gs *Store) Sync(ctx context.Context, secondInterval int) {
+	ticker := time.NewTicker(time.Duration(secondInterval) * time.Second)
+	defer ticker.Stop()
 	for {
-		time.Sleep(time.Duration(secondInterval) * time.Second)
-
-		log.Debugf("Starting sync for remote '%s' and branch '%s'", gs.Remote, gs.Branch)
-		start := time.Now()
-		_, err := gs.Pull()
-		if err != nil {
-			log.Debug(err.Error())
+		select {
+		case <-ticker.C:
+			start := time.Now()
+			if _, err := gs.Pull(); err != nil {
+				log.Debugf("Pull failed: %s", err)
+				continue
+			}
+			if _, err := gs.Push(); err != nil {
+				log.Debugf("Push failed: %s", err)
+			}
+			log.Debugf("Sync finished in: %v", time.Since(start))
+		case <-ctx.Done():
 		}
-
-		_, err = gs.Push()
-		if err != nil {
-			log.Debug(err.Error())
-		}
-		end := time.Now()
-		log.Debugf("Finished sync in: %v", end.Sub(start))
 	}
 }
 

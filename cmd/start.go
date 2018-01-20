@@ -3,6 +3,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -38,8 +39,12 @@ var startCmd = &cobra.Command{
 		// Root router
 		router := mux.NewRouter()
 
+		// Context to signal sync goroutine to stop
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		// Mount wiki under '/api'
-		wikiHandler := wiki.New()
+		wikiHandler := wiki.New(ctx)
 		router.PathPrefix("/api").Handler(
 			http.StripPrefix("/api", wikiHandler),
 		)
@@ -64,6 +69,6 @@ var startCmd = &cobra.Command{
 			viper.GetInt("server.port"),
 		)
 		log.Infof("Booting up wiki on: %s", address)
-		http.ListenAndServe(address, handler)
+		log.Fatalf("Listening: %s", http.ListenAndServe(address, handler))
 	},
 }

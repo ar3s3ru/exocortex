@@ -17,7 +17,7 @@ build: deps
 install: deps
 	@echo "--> Building UI"
 	@cd ui && yarn run build
-	packr build -o $(GOPATH)/bin/exodev
+	packr build -o $(GOPATH)/bin/exo
 	@echo "--> Exo successfully installed"
 	@echo
 	@exo
@@ -25,9 +25,9 @@ install: deps
 # Bootstraps a contributing setup to make getting involved in project easier
 bootstrap: install
 	@echo "--> Creating new example wiki for you"
-	@mkdir ../example-wiki && cd ../example-wiki && exo init && git init && git init && git add -A && git commit -m "First Commit"
+	@mkdir example-wiki && cd example-wiki && exo init && git init && git add -A && git commit -m "First Commit"
 	@echo "--> Starting up the wiki"
-	@cd ../example-wiki && exo start . &
+	@cd example-wiki && exo start . &
 	@open http://localhost:1234
 
 # Releases new version of exo to GitHub and Homebrew
