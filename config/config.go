@@ -26,7 +26,7 @@ func New(filePath string) {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
-		log.Errorf("exo: Config file required to start wiki: %s\n", err)
+		log.Errorf("%s: Config file required to start wiki: %s\n", os.Args[0], err)
 		os.Exit(1)
 	}
 

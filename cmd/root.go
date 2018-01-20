@@ -16,7 +16,7 @@ var debug bool
 // RootCmd is our base 'exo' command used to do utility tasks and start the wiki
 // server
 var RootCmd = &cobra.Command{
-	Use:   "exo",
+	Use:   os.Args[0],
 	Short: "An extension of your brain. A modern wiki for the modern developer.",
 }
 

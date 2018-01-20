@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -214,7 +215,8 @@ func (gs *Store) ExoMessage(page, action string) string {
 	}
 
 	return fmt.Sprintf(
-		"exo: %s %s by %s at %s",
+		"%s: %s %s by %s at %s",
+		os.Args[0],
 		action,
 		page,
 		author,
@@ -222,9 +224,9 @@ func (gs *Store) ExoMessage(page, action string) string {
 	)
 }
 
-// EnsureValidEnvironment ensures we have git installed and there is a repo in the directory the user
-// decided to host their wiki in. Return error if anything is wrong so callers
-// can bail out before continueing
+// EnsureValidEnvironment ensures we have git installed and there is a repo
+// in the directory the user decided to host their wiki in.
+// Return error if anything is wrong so callers can bail out before continueing.
 func (gs *Store) EnsureValidEnvironment() error {
 	cmdResult, err := gs.exec("--version")
 	if err != nil {
@@ -252,7 +254,6 @@ func (gs *Store) EnsureValidEnvironment() error {
 
 func filterPrefixes(rawList string) []string {
 	prefixes := strings.Split(rawList, "\n")
-
 	return filter(prefixes, func(p string) bool {
 		return !include(PrefixIgnore, p)
 	})
